@@ -1,7 +1,6 @@
-function p = visualize( L, P_loads, P_gen, I_line)
-%UNTITLED3 Summary of this function goes here
-%   Detailed explanation goes here
+function p = visualize( L, P_loads, P_gen, I_line, voltage)
 
+format bank
 %% extracting sources and target from L matrix
 set(0,'defaultAxesFontSize',20);
 set(0,'defaultTextFontSize',20);
@@ -72,9 +71,9 @@ G = graph(S,T);
 % Y_pos = p0.YData;
 
 % shadow graphPlot is dedicated to the second layer 
-p = plot(G,'Layout','layered','EdgeLabel', EdgesNames,'NodeLabel',NodeNames);
+p = plot(G,'Layout','layered','EdgeLabel', EdgesNames, 'NodeLabel',[]);
 p_shadow = plot(G,'Layout','layered');
-p.NodeLabel = repmat({''}, 1, size(L,1));
+p_shadow.NodeLabel = repmat({''}, 1, size(L,1));
 p.EdgeAlpha = 1;
 p_shadow.LineStyle = {'none'};
 p_shadow.Marker = ['none', repmat({'o'}, 1, size(L,1)-1)];
@@ -100,8 +99,7 @@ p_shadow.NodeColor = shadow_node_colors;
 
 p.EdgeColor = edge_colors;
 
-p_shadow.NodeLabel = NodeNames;
-p.NodeLabel(1) = {'Slack bus'};
+p_shadow.NodeLabel(1) = {'Slack bus'};
 
 line_width = ones(1,size(T,2));
 
@@ -128,21 +126,43 @@ heat_map()
         P_minor (gen_idx) = P_gen(gen_idx);
         load_idx = find (abs(P_gen)>P_loads);
         P_minor (load_idx) = P_loads(load_idx);
+        %---
+        gp = plot(G,'Layout','layered');
+        labels = gp.NodeLabel;
+        %labels = ['1 p.u.', labels];
+        gp.NodeLabel = [];
+        gp.XData = p.XData;
+        gp.YData = p.YData;
+        gp.LineStyle = 'none';gp.Marker = 'none';
+        label_custom_color = [0.85 0.5 0];
+        font = 'Arial';
+        
+        %p_shadow.NodeLabel(:,2:end) = string(abs(voltage(:,1)'));
+        for item=1:length(labels)-1
+            text(gp.XData(item+1)-0.2, gp.YData(item+1)-0.1, strcat('N', labels(item)),...
+               'fontsize', 12,'FontName', font, 'Color',label_custom_color, ...
+               'FontSmoothing', 'on', 'FontWeight', 'bold',  'rotation', 90);
+        end
         for l=1:size(NewILine,2)
+
+
+            j = strtrim(cellstr(num2str(abs(voltage(:,l)')'))');            
+            p_shadow.NodeLabel(:,2:end) = strcat(j , ' p.u.');
             p.LineWidth = 10*(NewILine(:,l)/i_abs_max)';
-            
+
             idx1 = find(NewILine(:,l)>0.9);
             idx2 = find(NewILine(:,l)<0.2);
-%           idx3 = setdiff(1:length(I_line(:,l)), idx1);
             warm = NewILine(:,l);
-%           cold = I_line(:,l);
             warm(idx1)=1;
             warm(idx2)=0;
-            
+
             p.EdgeColor(:,1) = warm;
             p.EdgeColor(:,2) = (1 - warm)*0.25;
             p.EdgeColor(:,3) = 1 - warm;
 
+            for key = 1: length(p.EdgeLabel)
+                p.EdgeLabel(key) = {strcat(num2str(round(NewILine(key,l)*100)),'%')};
+            end
             p.MarkerSize(2:end)=(abs(P_major(:,l).^0.65))';
             p_shadow.MarkerSize(2:end)=(abs(abs(P_minor(:,l)+0.1).^0.65))';
 
@@ -155,8 +175,8 @@ heat_map()
                     p.NodeColor(ii+1,:) = [0 1 1];
                 end
             end
-            
-           for ii=1:size(P_minor,1)
+
+            for ii=1:size(P_minor,1)
                 if P_minor(ii,l)>0
                     p_shadow.NodeColor(ii+1,:) = [1 0 0];
                 elseif P_minor(ii,l)<0
@@ -164,17 +184,15 @@ heat_map()
                 else
                     p_shadow.NodeColor(ii+1,:) = [0 1 1];
                 end
-           end
-            
+            end
+
             axis off
             title(strcat(num2str(l),' : 00 : 00'));
-%           sprintf('Time: %02d:%02d:%02d', hours, minutes, seconds)
             if l<10
                 DispVal = strcat('img00',num2str(l));
             else 
                 DispVal = strcat('img0',num2str(l));
             end
-%             print(strcat('images\',DispVal),'-dpng');
             saveas( gcf, strcat('images\',DispVal), 'jpg' );
             
         end

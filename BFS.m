@@ -213,5 +213,5 @@ plot_script_p;
 pause(1)
 plot_script_v;
 pause(1)
-visualize(L, P_load, P_gen, loading_of_lines);
+visualize(L, P_load, P_gen, loading_of_lines, v);
 
