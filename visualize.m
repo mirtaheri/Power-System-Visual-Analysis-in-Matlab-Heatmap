@@ -68,7 +68,6 @@ G = graph(S,T);
 
 % p0 = plot(G);
 % X_pos = p0.XData;
-% Y_pos = p0.YData;
 
 % shadow graphPlot is dedicated to the second layer 
 p = plot(G,'Layout','layered','EdgeLabel', EdgesNames, 'NodeLabel',[]);
